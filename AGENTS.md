@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Chat threads and generated images are stored in browser localStorage (src/lib/threads.ts); AI calls go through server routes in src/routes/api so the key stays server-side.
