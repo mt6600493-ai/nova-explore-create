@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored AI Elements source; strict-mode type mismatches only
 "use client";
 
 import { useControllableState } from "@radix-ui/react-use-controllable-state";

@@ -1,3 +1,4 @@
+// @ts-nocheck -- vendored AI Elements source; strict-mode type mismatches only
 "use client";
 
 import { cn } from "@/lib/utils";

@@ -133,13 +133,13 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
                     return (
                       <div key={i} className="flex flex-col gap-2">
                         {t.type === "tool-generate_image" && inputReady ? (
-                          <ImageCard id={t.toolCallId} prompt={String(t.input?.prompt ?? "")} />
+                          <ImageCard id={t.toolCallId} prompt={String(t.input?.["prompt"] ?? "")} />
                         ) : null}
                         {t.type === "tool-show_3d_model" ? (
                           <ModelCard
-                            title={String(t.input?.title ?? "")}
-                            parts={(t.input?.parts as Part[]) ?? []}
-                            spin={Boolean(t.input?.spin)}
+                            title={String(t.input?.["title"] ?? "")}
+                            parts={(t.input?.["parts"] as Part[]) ?? []}
+                            spin={Boolean(t.input?.["spin"])}
                             done={inputReady}
                           />
                         ) : null}
