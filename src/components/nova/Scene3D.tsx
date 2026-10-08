@@ -12,11 +12,13 @@ export type Part = {
   label: string;
 };
 
-const v3 = (a: number[] | undefined, d: number): [number, number, number] => [
-  Number(a?.[0] ?? d) || d,
-  Number(a?.[1] ?? d) || (a?.[1] === 0 ? 0 : d),
-  Number(a?.[2] ?? d) || (a?.[2] === 0 ? 0 : d),
-];
+const v3 = (a: number[] | undefined, d: number): [number, number, number] => {
+  const f = (i: number) => {
+    const n = Number(a?.[i] ?? (i > 0 ? a?.[0] : undefined));
+    return Number.isFinite(n) && n !== 0 ? n : d;
+  };
+  return [f(0), f(1), f(2)];
+};
 
 function Geometry({ shape }: { shape: Part["shape"] }) {
   switch (shape) {
