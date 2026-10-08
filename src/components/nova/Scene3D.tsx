@@ -66,7 +66,7 @@ function Model({ parts, spin, showLabels }: { parts: Part[]; spin: boolean; show
 
 export default function Scene3D({ parts, spin, showLabels }: { parts: Part[]; spin: boolean; showLabels: boolean }) {
   return (
-    <Canvas camera={{ position: [0, 3, 10], fov: 50 }} dpr={[1, 2]}>
+    <Canvas camera={{ position: [0, 1.5, 5], fov: 50 }} dpr={[1, 2]}>
       <color attach="background" args={["#05070f"]} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 8, 5]} intensity={1.4} />
