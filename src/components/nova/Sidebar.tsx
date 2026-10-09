@@ -33,11 +33,11 @@ export function ThreadList({ activeId, onNavigate }: { activeId: string; onNavig
         <span className="font-display text-lg font-semibold tracking-tight">Nova</span>
       </div>
       <Button variant="nova" onClick={startNew} className="justify-start">
-        <Plus className="size-4" /> Nayi chat
+        <Plus className="size-4" /> New chat
       </Button>
       <nav className="-mx-1 flex-1 overflow-y-auto px-1">
         {threads.length === 0 ? (
-          <p className="px-2 py-4 text-xs text-muted-foreground">Abhi koi chat nahi.</p>
+          <p className="px-2 py-4 text-xs text-muted-foreground">No chats yet.</p>
         ) : null}
         <ul className="flex flex-col gap-0.5">
           {threads.map((t) => (
@@ -66,7 +66,7 @@ export function ThreadList({ activeId, onNavigate }: { activeId: string; onNavig
           ))}
         </ul>
       </nav>
-      <p className="px-2 text-[11px] text-muted-foreground">Chats isi browser mein save hoti hain.</p>
+      <p className="px-2 text-[11px] text-muted-foreground">Chats are saved in this browser.</p>
     </div>
   );
 }

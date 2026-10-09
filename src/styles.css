@@ -71,7 +71,7 @@
   --card-foreground: oklch(0.96 0.01 240);
   --popover: oklch(0.19 0.03 258);
   --popover-foreground: oklch(0.96 0.01 240);
-  --primary: oklch(0.82 0.13 205);
+  --primary: oklch(0.8 0.15 165);
   --primary-foreground: oklch(0.16 0.03 255);
   --secondary: oklch(0.24 0.03 258);
   --secondary-foreground: oklch(0.96 0.01 240);
@@ -83,22 +83,22 @@
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.82 0.13 205);
+  --ring: oklch(0.8 0.15 165);
   --nova-amber: oklch(0.83 0.15 75);
-  --shadow-glow: 0 0 24px -6px oklch(0.82 0.13 205 / 55%);
-  --chart-1: oklch(0.82 0.13 205);
+  --shadow-glow: 0 0 24px -6px oklch(0.8 0.15 165 / 55%);
+  --chart-1: oklch(0.8 0.15 165);
   --chart-2: oklch(0.83 0.15 75);
   --chart-3: oklch(0.7 0.15 150);
   --chart-4: oklch(0.7 0.18 330);
   --chart-5: oklch(0.75 0.12 260);
   --sidebar: oklch(0.12 0.022 260);
   --sidebar-foreground: oklch(0.96 0.01 240);
-  --sidebar-primary: oklch(0.82 0.13 205);
+  --sidebar-primary: oklch(0.8 0.15 165);
   --sidebar-primary-foreground: oklch(0.16 0.03 255);
   --sidebar-accent: oklch(0.22 0.03 258);
   --sidebar-accent-foreground: oklch(0.96 0.01 240);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.82 0.13 205);
+  --sidebar-ring: oklch(0.8 0.15 165);
 }
 
 @theme inline {
@@ -123,12 +123,12 @@
 @layer components {
   .nova-bg {
     background:
-      radial-gradient(60rem 30rem at 85% -10%, oklch(0.82 0.13 205 / 10%), transparent 60%),
+      radial-gradient(60rem 30rem at 85% -10%, oklch(0.8 0.15 165 / 10%), transparent 60%),
       radial-gradient(40rem 24rem at 0% 110%, oklch(0.83 0.15 75 / 7%), transparent 60%),
       var(--background);
   }
   .nova-glow {
-    filter: drop-shadow(0 0 18px oklch(0.82 0.13 205 / 55%));
+    filter: drop-shadow(0 0 18px oklch(0.8 0.15 165 / 55%));
   }
   .nova-card {
     border: 1px solid var(--border);
@@ -148,7 +148,7 @@
     transition: border-color 0.2s, transform 0.2s;
   }
   .nova-suggestion:hover {
-    border-color: oklch(0.82 0.13 205 / 50%);
+    border-color: oklch(0.8 0.15 165 / 50%);
     transform: translateY(-1px);
   }
   .nova-composer {
@@ -175,7 +175,7 @@
     border-radius: 999px;
     background: oklch(0.14 0.025 260 / 80%);
     color: var(--foreground);
-    border: 1px solid oklch(0.82 0.13 205 / 40%);
+    border: 1px solid oklch(0.8 0.15 165 / 40%);
     pointer-events: none;
   }
 }
