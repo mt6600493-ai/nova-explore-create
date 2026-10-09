@@ -1,0 +1,4 @@
+- [x] New chat fix + fresh chat on reopen
+- [x] English UI, new colors (logo kept)
+- [x] Photo upload (+), mic typing, live voice chat, offline mode
+- [x] Same-language, natural replies
