@@ -45,8 +45,8 @@ export function ImageCard({ id, prompt }: { id: string; prompt: string }) {
         if (isFinal) void compress(url).then((small) => saveImage(id, small));
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Image nahi ban saki";
-      setError(msg.includes("402") ? "AI credits khatam ho gaye hain." : msg.includes("429") ? "Abhi bahut requests hain, thodi der baad try karein." : "Image nahi ban saki.");
+      const msg = e instanceof Error ? e.message : "Image could not be created";
+      setError(msg.includes("402") ? "AI credits have run out." : msg.includes("429") ? "Too many requests, please try again shortly." : "Image could not be created.");
     } finally {
       setBusy(false);
     }
@@ -80,7 +80,7 @@ export function ImageCard({ id, prompt }: { id: string; prompt: string }) {
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            {busy ? <Shimmer>Image ban rahi hai...</Shimmer> : <span className="text-sm text-muted-foreground">{error}</span>}
+            {busy ? <Shimmer>Creating image...</Shimmer> : <span className="text-sm text-muted-foreground">{error}</span>}
           </div>
         )}
       </div>
@@ -95,7 +95,7 @@ export function ImageCard({ id, prompt }: { id: string; prompt: string }) {
         ) : null}
         {!busy ? (
           <Button size="sm" variant="ghost" onClick={() => void run()}>
-            <RefreshCw className="size-4" /> {src ? "Dobara" : "Generate"}
+            <RefreshCw className="size-4" /> {src ? "Regenerate" : "Generate"}
           </Button>
         ) : null}
       </div>
@@ -118,17 +118,17 @@ export function ModelCard({ title, parts, spin, done }: { title: string; parts: 
       <div ref={wrap} className="relative h-80 w-full sm:h-[26rem]">
         {done && parts.length ? (
           <ClientOnly fallback={<div className="h-full" />}>
-            <Suspense fallback={<div className="flex h-full items-center justify-center"><Shimmer>3D load ho raha hai...</Shimmer></div>}>
+            <Suspense fallback={<div className="flex h-full items-center justify-center"><Shimmer>Loading 3D...</Shimmer></div>}>
               <Scene3D parts={parts} spin={spin} showLabels={labels} />
             </Suspense>
           </ClientOnly>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <Shimmer>3D model ban raha hai...</Shimmer>
+            <Shimmer>Building 3D model...</Shimmer>
           </div>
         )}
       </div>
-      <p className="px-4 py-2 text-xs text-muted-foreground">Ungli ya mouse se ghumaayein · zoom ke liye pinch/scroll</p>
+      <p className="px-4 py-2 text-xs text-muted-foreground">Drag to rotate · pinch or scroll to zoom</p>
     </div>
   );
 }

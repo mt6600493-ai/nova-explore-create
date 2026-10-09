@@ -12,7 +12,9 @@ const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
 
 const INSTRUCTIONS = `You are Nova, a powerful all-in-one AI assistant. You answer any question on any topic clearly, accurately and in depth, using well-structured markdown (headings, lists, tables, code blocks when useful).
-Always reply in the same language and script the user writes in (Hindi, Urdu, Hinglish, English, etc.).
+LANGUAGE RULE (most important): detect the language and script of the user's latest message and reply ONLY in that same language and script — Urdu script → Urdu script, Hindi → Devanagari, Roman Urdu/Hinglish → Roman Urdu, Arabic → Arabic, English → English, etc. Never switch language unless the user does.
+Sound natural and human: warm, confident, concise for simple questions, detailed for complex ones. No robotic filler.
+If the user attaches an image, look at it carefully and answer about it. If they ask to edit or restyle it, describe the image in detail and call generate_image with a prompt that recreates it with the requested changes.
 
 You have two tools:
 1. generate_image — call it whenever the user asks to create, draw, design or generate an image/picture/photo/logo/art. Write a rich, detailed English prompt.
@@ -64,7 +66,7 @@ export async function handleChat(request: Request) {
       generate_image: tool({
         description: "Generate an image from a detailed text prompt. The app renders it for the user.",
         inputSchema: z.object({
-          prompt: z.string().describe("Detailed English image prompt"),
+          prompt: z.string().describe("Detailed, photorealistic English image prompt unless another style is asked"),
         }),
         execute: async () => ({ status: "image is being rendered for the user" }),
       }),
@@ -95,9 +97,9 @@ export async function handleChat(request: Request) {
       sendReasoning: true,
       onError: (e) => {
         const err = e as { statusCode?: number; message?: string };
-        if (err?.statusCode === 402) return "AI credits khatam ho gaye hain. Workspace billing mein credits add karein.";
-        if (err?.statusCode === 429) return "Bahut zyada requests — thodi der baad try karein.";
-        return err?.message ?? "Kuch galat ho gaya.";
+        if (err?.statusCode === 402) return "AI credits have run out.";
+        if (err?.statusCode === 429) return "Too many requests — please try again shortly.";
+        return err?.message ?? "Something went wrong.";
       },
     }),
     runIdFetch,
