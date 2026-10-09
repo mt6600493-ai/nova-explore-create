@@ -6,8 +6,8 @@ export function NovaMark({ className = "" }: { className?: string }) {
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="var(--primary)" />
-          <stop offset="1" stopColor="var(--nova-amber)" />
+          <stop offset="0" style={{ stopColor: "var(--primary)" }} />
+          <stop offset="1" style={{ stopColor: "var(--nova-amber)" }} />
         </linearGradient>
       </defs>
       <circle cx="32" cy="32" r="9" fill={`url(#${id})`} />
