@@ -14,11 +14,13 @@ const MODEL = "openai/gpt-6-astra";
 const INSTRUCTIONS = `You are Nova, a powerful all-in-one AI assistant. You answer any question on any topic clearly, accurately and in depth, using well-structured markdown (headings, lists, tables, code blocks when useful).
 LANGUAGE RULE (most important): detect the language and script of the user's latest message and reply ONLY in that same language and script — Urdu script → Urdu script, Hindi → Devanagari, Roman Urdu/Hinglish → Roman Urdu, Arabic → Arabic, English → English, etc. Never switch language unless the user does.
 Sound natural and human: warm, confident, concise for simple questions, detailed for complex ones. No robotic filler.
-If the user attaches an image, look at it carefully and answer about it. If they ask to edit or restyle it, describe the image in detail and call generate_image with a prompt that recreates it with the requested changes.
+If the user attaches an image, look at it carefully and answer about it.
 
-You have two tools:
-1. generate_image — call it whenever the user asks to create, draw, design or generate an image/picture/photo/logo/art. Write a rich, detailed English prompt.
-2. show_3d_model — call it whenever the user asks to see something in 3D, or when a 3D visual would clearly help explain a topic (solar system, atom, molecule, DNA, planet, building, heart, machine, etc.). Build the model from simple shapes:
+You have four tools:
+1. generate_image — call it whenever the user asks to create, draw, design or generate a NEW image/picture/photo/logo/art from scratch. Write a rich, detailed English prompt.
+2. edit_image — call it when the user attached an image and asks to EDIT, modify, recolor, restyle or change it (e.g. "paint this wall blue", "remove the car", "make it night"). CRITICAL: the prompt must describe ONLY the requested change and explicitly say to keep the original scene, structure, perspective, objects and composition unchanged. Never use generate_image for edits — it creates a different picture.
+3. generate_video — call it ONLY when the user explicitly asks to create/generate a video or clip. Write a detailed English prompt describing scene, camera, lighting, mood and any sound; set seconds between 3 and 10 (default 6).
+4. show_3d_model — call it whenever the user asks to see something in 3D, or when a 3D visual would clearly help explain a topic (solar system, atom, molecule, DNA, planet, building, heart, machine, etc.). Build the model from simple shapes:
    - shapes: sphere, box, cylinder, cone, torus
    - position [x,y,z] in a scene roughly within -5..5, scale [x,y,z] (size of the shape; sphere uses x as radius-ish), rotation [x,y,z] in radians
    - color as hex like "#ff8800"; label: short name of the part, or "" for no label
@@ -40,13 +42,19 @@ export async function handleChat(request: Request) {
   if (!apiKey) return new Response("AI is not configured", { status: 500 });
 
   let messages: UIMessage[];
+  let customInstructions = "";
   try {
-    const body = (await request.json()) as { messages?: UIMessage[] };
+    const body = (await request.json()) as { messages?: UIMessage[]; customInstructions?: string };
     if (!Array.isArray(body.messages)) throw new Error("bad");
     messages = body.messages;
+    if (typeof body.customInstructions === "string") customInstructions = body.customInstructions.slice(0, 2000);
   } catch {
     return new Response("Invalid request", { status: 400 });
   }
+
+  const instructions = customInstructions
+    ? `${INSTRUCTIONS}\n\nUSER'S CUSTOM INSTRUCTIONS (always follow these, unless they conflict with the rules above):\n${customInstructions}`
+    : INSTRUCTIONS;
 
   const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
   const provider = createOpenAI({
@@ -58,17 +66,37 @@ export async function handleChat(request: Request) {
 
   const result = streamText({
     model: provider.responses(MODEL),
-    instructions: INSTRUCTIONS,
+    instructions,
     messages: await convertToModelMessages(messages),
     abortSignal: request.signal,
     stopWhen: stepCountIs(50),
     tools: {
       generate_image: tool({
-        description: "Generate an image from a detailed text prompt. The app renders it for the user.",
+        description: "Generate a brand-new image from a detailed text prompt. The app renders it for the user.",
         inputSchema: z.object({
           prompt: z.string().describe("Detailed, photorealistic English image prompt unless another style is asked"),
         }),
         execute: async () => ({ status: "image is being rendered for the user" }),
+      }),
+      edit_image: tool({
+        description:
+          "Edit the image the user attached. Keeps the original scene/structure and applies only the requested change.",
+        inputSchema: z.object({
+          prompt: z
+            .string()
+            .describe(
+              "English instruction describing ONLY the change to apply, e.g. 'Paint only the front wall light blue. Keep everything else exactly the same.'",
+            ),
+        }),
+        execute: async () => ({ status: "edited image is being rendered for the user" }),
+      }),
+      generate_video: tool({
+        description: "Generate a short video clip (3-10 seconds) from a detailed prompt. Only on explicit user request.",
+        inputSchema: z.object({
+          prompt: z.string().describe("Detailed English video prompt: scene, camera, lighting, mood, sound"),
+          seconds: z.number().min(3).max(10).describe("Clip length in seconds, 3-10"),
+        }),
+        execute: async () => ({ status: "video is being generated for the user" }),
       }),
       show_3d_model: tool({
         description: "Show an interactive, rotatable 3D model built from simple shapes.",
