@@ -2,7 +2,10 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AudioLines, Box, ImageIcon, Mic, MicOff, Plus, Search, Sparkle, WifiOff, X } from "lucide-react";
+import { AudioLines, Bookmark, Box, Camera, Check, Copy, FileText, ImageIcon, Mic, MicOff, Pencil, Plus, RefreshCw, Search, Share2, Sparkle, Square, Star, ThumbsDown, ThumbsUp, Volume2, WifiOff, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { loadFeedback, loadSettings, setFeedback, type Feedback } from "@/lib/settings";
+import { useAuth } from "@/lib/auth";
 
 import {
   Conversation,
@@ -26,7 +29,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { upsertThread } from "@/lib/threads";
 import { Button } from "@/components/ui/button";
-import { ImageCard, ModelCard } from "./ToolCards";
+import { EditImageCard, ImageCard, ModelCard, VideoCard } from "./ToolCards";
 import type { Part } from "./Scene3D";
 import { NovaMark } from "./NovaMark";
 import { createRecognizer, offlineReply, speak } from "./Voice";
@@ -47,9 +50,43 @@ type AnyToolPart = {
   errorText?: string;
 };
 
-export function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMessages: UIMessage[] }) {
-  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
-  const { messages, sendMessage, setMessages, status, stop } = useChat({
+const TIMES = "nova.times.v1";
+function stampTime(id: string) {
+  try {
+    const all = JSON.parse(localStorage.getItem(TIMES) || "{}") as Record<string, number>;
+    if (!all[id]) {
+      all[id] = Date.now();
+      localStorage.setItem(TIMES, JSON.stringify(all));
+    }
+    return all[id]!;
+  } catch {
+    return Date.now();
+  }
+}
+function fmtTime(t: number) {
+  const d = new Date(t);
+  const today = new Date().toDateString() === d.toDateString();
+  const y = new Date(Date.now() - 864e5).toDateString() === d.toDateString();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return `${today ? "Today" : y ? "Yesterday" : d.toLocaleDateString()}, ${time}`;
+}
+function textOf(m: UIMessage) {
+  return m.parts.map((p) => (p.type === "text" ? p.text : "")).join("\n").trim();
+}
+
+export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threadId: string; initialMessages: UIMessage[]; initialPrompt?: string }) {
+  const { profile } = useAuth();
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: () => ({ customInstructions: loadSettings().customInstructions || profileRef.current?.custom_instructions || "" }),
+      }),
+    [],
+  );
+  const { messages, sendMessage, setMessages, status, stop, regenerate } = useChat({
     id: threadId,
     messages: initialMessages,
     transport,
@@ -65,6 +102,13 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     },
   });
   const busy = status === "submitted" || status === "streaming";
+  const sentInitial = useRef(false);
+  useEffect(() => {
+    if (initialPrompt && !sentInitial.current && initialMessages.length === 0) {
+      sentInitial.current = true;
+      void sendMessage({ text: initialPrompt });
+    }
+  }, [initialPrompt, initialMessages.length, sendMessage]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -179,6 +223,14 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voice, busy, messages]);
 
+  const lastImageBefore = (id: string) => {
+    const idx = messages.findIndex((x) => x.id === id);
+    for (let i = idx; i >= 0; i--) {
+      const f = [...messages[i]!.parts].reverse().find((p) => p.type === "file" && p.mediaType?.startsWith("image/"));
+      if (f && f.type === "file") return f.url;
+    }
+    return null;
+  };
   const last = messages[messages.length - 1];
   const waiting = busy && (last?.role === "user" || !last?.parts.some((p) => p.type === "text" && p.text));
 
@@ -254,6 +306,12 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
                             done={inputReady}
                           />
                         ) : null}
+                        {t.type === "tool-edit_image" && inputReady ? (
+                          <EditImageCard id={t.toolCallId} prompt={String(t.input?.["prompt"] ?? "")} sourceUrl={lastImageBefore(m.id)} />
+                        ) : null}
+                        {t.type === "tool-generate_video" && inputReady ? (
+                          <VideoCard id={t.toolCallId} prompt={String(t.input?.["prompt"] ?? "")} seconds={Number(t.input?.["seconds"] ?? 6)} />
+                        ) : null}
                         {t.type === "tool-generate_image" && !inputReady ? (
                           <Shimmer>Planning the image...</Shimmer>
                         ) : null}
@@ -261,7 +319,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
                           <ToolHeader
                             type={t.type as `tool-${string}`}
                             state={t.state as never}
-                            title={t.type === "tool-generate_image" ? "Image generator" : "3D builder"}
+                            title={TOOL_TITLES[t.type] ?? "Tool"}
                           />
                           <ToolContent>
                             <ToolInput input={t.input} />
@@ -274,6 +332,17 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
                   return null;
                 })}
               </MessageContent>
+              {!(busy && m.id === last?.id) ? (
+                <MessageActions m={m} isLast={m.id === last?.id}
+                  onEdit={() => {
+                    setText(textOf(m));
+                    setMessages((all) => all.slice(0, all.findIndex((x) => x.id === m.id)));
+                    inputRef.current?.focus();
+                  }}
+                  onRegenerate={() => void regenerate({ messageId: m.id })}
+                  onFollowUp={(q) => send(q)}
+                />
+              ) : null}
             </Message>
           ))}
 
@@ -293,7 +362,7 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
             <WifiOff className="size-3.5" /> Offline mode — basic replies only until you reconnect.
           </p>
         ) : null}
-        <PromptInput onSubmit={submit} accept="image/*" multiple maxFiles={4} maxFileSize={8 * 1024 * 1024}
+        <PromptInput onSubmit={submit} accept="image/*,application/pdf,text/plain,.txt,.md,.csv" multiple maxFiles={4} maxFileSize={8 * 1024 * 1024}
           onError={(e) => toast.error(e.message)} className="nova-composer">
           <AttachmentPreview />
           <PromptInputTextarea
@@ -341,12 +410,122 @@ export function ChatWindow({ threadId, initialMessages }: { threadId: string; in
   );
 }
 
+const TOOL_TITLES: Record<string, string> = {
+  "tool-generate_image": "Image generator",
+  "tool-edit_image": "Photo editor",
+  "tool-generate_video": "Video generator",
+  "tool-show_3d_model": "3D builder",
+};
+
 function AddPhotoButton() {
   const a = usePromptInputAttachments();
+  const cam = useRef<HTMLInputElement>(null);
+  const gal = useRef<HTMLInputElement>(null);
+  const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) a.add(e.target.files);
+    e.target.value = "";
+  };
   return (
-    <PromptInputButton aria-label="Add photo" onClick={() => a.openFileDialog()}>
-      <Plus className="size-4" />
-    </PromptInputButton>
+    <>
+      <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
+      <input ref={gal} type="file" accept="image/*" multiple hidden onChange={pick} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <PromptInputButton aria-label="Add">
+            <Plus className="size-4" />
+          </PromptInputButton>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" side="top">
+          <DropdownMenuItem onClick={() => cam.current?.click()}><Camera className="size-4" /> Camera</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => gal.current?.click()}><ImageIcon className="size-4" /> Gallery</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => a.openFileDialog()}><FileText className="size-4" /> Files / PDF</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+}
+
+function Act({ label, onClick, children, active }: { label: string; onClick: () => void; children: React.ReactNode; active?: boolean }) {
+  return (
+    <button type="button" aria-label={label} title={label} onClick={onClick}
+      className={`rounded-md p-1.5 hover:bg-accent hover:text-foreground ${active ? "text-primary" : ""}`}>
+      {children}
+    </button>
+  );
+}
+
+function MessageActions({ m, isLast, onEdit, onRegenerate, onFollowUp }: {
+  m: UIMessage; isLast: boolean; onEdit: () => void; onRegenerate: () => void; onFollowUp: (q: string) => void;
+}) {
+  const [time, setTime] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [fb, setFb] = useState<Feedback>({});
+  useEffect(() => {
+    setTime(stampTime(m.id));
+    setFb(loadFeedback()[m.id] ?? {});
+  }, [m.id]);
+  const update = (p: Feedback) => {
+    setFeedback(m.id, p);
+    setFb((f) => ({ ...f, ...p }));
+  };
+  const txt = textOf(m);
+  const copy = () => {
+    void navigator.clipboard.writeText(txt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  const share = async () => {
+    const data = { title: "Nova AI", text: txt.slice(0, 1000), url: "https://nova-explore-anything.com" };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else {
+        await navigator.clipboard.writeText(`${data.text}\n\n— Nova AI ${data.url}`);
+        toast.success("Copied to share");
+      }
+    } catch { /* cancelled */ }
+  };
+  const isUser = m.role === "user";
+  return (
+    <div className={`flex flex-col gap-1.5 ${isUser ? "items-end" : "items-start"}`}>
+      <div className="flex flex-wrap items-center gap-0.5 text-muted-foreground">
+        {time ? <span className="mr-1 text-[11px]">{fmtTime(time)}</span> : null}
+        {txt ? <Act label="Copy" onClick={copy}>{copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}</Act> : null}
+        {isUser ? (
+          <Act label="Edit" onClick={onEdit}><Pencil className="size-3.5" /></Act>
+        ) : (
+          <>
+            <Act label={speaking ? "Stop" : "Read aloud"} active={speaking} onClick={() => {
+              if (speaking) { window.speechSynthesis?.cancel(); setSpeaking(false); return; }
+              setSpeaking(true);
+              speak(txt, () => setSpeaking(false));
+            }}>{speaking ? <Square className="size-3.5" /> : <Volume2 className="size-3.5" />}</Act>
+            {isLast ? <Act label="Regenerate" onClick={onRegenerate}><RefreshCw className="size-3.5" /></Act> : null}
+            <Act label="Like" active={fb.vote === "up"} onClick={() => update({ vote: fb.vote === "up" ? undefined : "up" })}><ThumbsUp className="size-3.5" /></Act>
+            <Act label="Dislike" active={fb.vote === "down"} onClick={() => { update({ vote: fb.vote === "down" ? undefined : "down" }); if (fb.vote !== "down") toast("Thanks — your feedback helps Nova improve."); }}><ThumbsDown className="size-3.5" /></Act>
+            <Act label="Save" active={fb.saved} onClick={() => update({ saved: !fb.saved })}><Bookmark className={`size-3.5 ${fb.saved ? "fill-current" : ""}`} /></Act>
+            <Act label="Share" onClick={() => void share()}><Share2 className="size-3.5" /></Act>
+            <span className="ml-1 flex">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" aria-label={`Rate ${n} stars`} onClick={() => update({ stars: n })} className="p-0.5">
+                  <Star className={`size-3 ${(fb.stars ?? 0) >= n ? "fill-primary text-primary" : ""}`} />
+                </button>
+              ))}
+            </span>
+          </>
+        )}
+      </div>
+      {!isUser && isLast && txt ? (
+        <div className="flex flex-wrap gap-1.5">
+          {["Explain in more detail", "Give me an example", "Summarize in 3 points"].map((q) => (
+            <button key={q} type="button" onClick={() => onFollowUp(q)}
+              className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:border-primary hover:text-foreground">
+              {q}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -357,7 +536,13 @@ function AttachmentPreview() {
     <PromptInputHeader className="flex flex-wrap gap-2 p-2">
       {a.files.map((f) => (
         <div key={f.id} className="relative">
-          <img src={f.url} alt={f.filename ?? "Upload"} className="size-16 rounded-lg object-cover" />
+          {f.mediaType?.startsWith("image/") ? (
+            <img src={f.url} alt={f.filename ?? "Upload"} className="size-16 rounded-lg object-cover" />
+          ) : (
+            <div className="flex size-16 flex-col items-center justify-center rounded-lg bg-secondary p-1 text-[10px]">
+              <FileText className="size-5" /><span className="w-full truncate text-center">{f.filename}</span>
+            </div>
+          )}
           <button type="button" aria-label="Remove" onClick={() => a.remove(f.id)}
             className="absolute -right-1.5 -top-1.5 rounded-full bg-secondary p-0.5">
             <X className="size-3" />
