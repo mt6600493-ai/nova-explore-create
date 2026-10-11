@@ -86,6 +86,44 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             <Seg value={s.voiceStyle} onChange={(v) => setS({ ...s, voiceStyle: v })}
               options={[["friendly", "Friendly"], ["professional", "Professional"], ["calm", "Calm"]]} />
           </div>
+          <div className="flex flex-col gap-2">
+            <Label>Theme</Label>
+            <Seg value={s.themeMode} onChange={(v) => setS({ ...s, themeMode: v })} options={[["dark", "Dark"], ["light", "Light"]]} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>Accent color</Label>
+            <Seg value={s.accent} onChange={(v) => setS({ ...s, accent: v })}
+              options={[["emerald", "Emerald"], ["blue", "Blue"], ["violet", "Violet"], ["amber", "Amber"], ["rose", "Rose"]]} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>Chat wallpaper (your own photo)</Label>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="secondary" size="sm" onClick={() => wallpaperInput.current?.click()}>
+                Choose from gallery
+              </Button>
+              {s.wallpaper ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setS({ ...s, wallpaper: "" })}>
+                  Remove
+                </Button>
+              ) : null}
+            </div>
+            <input
+              ref={wallpaperInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (f.size > 3 * 1024 * 1024) { toast.error("Please pick a photo under 3 MB"); return; }
+                const r = new FileReader();
+                r.onload = () => setS((prev) => ({ ...prev, wallpaper: String(r.result) }));
+                r.readAsDataURL(f);
+                e.target.value = "";
+              }}
+            />
+            <p className="text-xs text-muted-foreground">Your photo stays on this device only.</p>
+          </div>
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={() => { saveSettings(s); speak("Hello! I am Nova, your AI assistant.", () => {}); }}>
               Test voice
