@@ -7,7 +7,7 @@ import { AppShell } from "@/components/nova/AppShell";
 import { loadThreads } from "@/lib/threads";
 
 export const Route = createFileRoute("/chat/$threadId")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s["q"] === "string" ? (s["q"] as string) : undefined }),
+  validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s["q"] === "string" ? { q: s["q"] as string } : {}),
   head: () => ({
     meta: [
       { title: "Chat — Nova AI" },

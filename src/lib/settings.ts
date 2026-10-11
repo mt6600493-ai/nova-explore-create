@@ -43,7 +43,7 @@ export function useSettings() {
 }
 
 /* Message feedback: likes, ratings, bookmarks — kept in this browser. */
-export type Feedback = { vote?: "up" | "down"; stars?: number; saved?: boolean };
+export type Feedback = { vote?: "up" | "down" | undefined; stars?: number; saved?: boolean };
 const FB = "nova.feedback.v1";
 export function loadFeedback(): Record<string, Feedback> {
   try {

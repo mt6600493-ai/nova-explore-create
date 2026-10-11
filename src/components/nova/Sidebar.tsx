@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BookOpen, Home, ImageIcon, LogIn, LogOut, MessageSquare, Plus, Search, Settings, Trash2, Wrench } from "lucide-react";
+import { Home, LogIn, LogOut, MessageSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -10,12 +10,9 @@ import { SettingsDialog } from "./SettingsDialog";
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/images", label: "Images", icon: ImageIcon },
-  { to: "/study", label: "Study Hub", icon: BookOpen },
-  { to: "/tools", label: "Tools", icon: Wrench },
 ] as const;
 
-export function ThreadList({ activeId, onNavigate }: { activeId?: string; onNavigate?: () => void }) {
+export function ThreadList({ activeId, onNavigate }: { activeId?: string | undefined; onNavigate?: () => void }) {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [q, setQ] = useState("");
   const [searching, setSearching] = useState(false);

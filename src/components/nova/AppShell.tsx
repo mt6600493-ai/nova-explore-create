@@ -8,7 +8,7 @@ import { newThreadId } from "@/lib/threads";
 import { ThreadList } from "./Sidebar";
 import { NovaMark } from "./NovaMark";
 
-export function AppShell({ activeId, title = "Nova", children }: { activeId?: string; title?: string; children: ReactNode }) {
+export function AppShell({ activeId, title = "Nova", children }: { activeId?: string | undefined; title?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   return (
