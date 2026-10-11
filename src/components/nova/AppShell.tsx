@@ -5,14 +5,20 @@ import { Menu, Plus } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { newThreadId } from "@/lib/threads";
+import { useSettings } from "@/lib/settings";
 import { ThreadList } from "./Sidebar";
 import { NovaMark } from "./NovaMark";
 
 export function AppShell({ activeId, title = "Nova", children }: { activeId?: string | undefined; title?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const settings = useSettings();
   return (
-    <div className="nova-bg flex h-dvh overflow-hidden">
+    <div
+      data-accent={settings.accent}
+      className={`nova-bg relative flex h-dvh overflow-hidden ${settings.themeMode === "light" ? "light" : ""} ${settings.wallpaper ? "nova-wallpaper" : ""}`}
+      style={settings.wallpaper ? { backgroundImage: `url(${settings.wallpaper})` } : undefined}
+    >
       <aside className="hidden w-72 shrink-0 border-r border-border bg-sidebar md:block">
         <ThreadList activeId={activeId} />
       </aside>
