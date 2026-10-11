@@ -74,7 +74,7 @@ function textOf(m: UIMessage) {
   return m.parts.map((p) => (p.type === "text" ? p.text : "")).join("\n").trim();
 }
 
-export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threadId: string; initialMessages: UIMessage[]; initialPrompt?: string }) {
+export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threadId: string; initialMessages: UIMessage[]; initialPrompt?: string | undefined }) {
   const { profile } = useAuth();
   const profileRef = useRef(profile);
   profileRef.current = profile;
@@ -445,7 +445,7 @@ function AddPhotoButton() {
   );
 }
 
-function Act({ label, onClick, children, active }: { label: string; onClick: () => void; children: React.ReactNode; active?: boolean }) {
+function Act({ label, onClick, children, active }: { label: string; onClick: () => void; children: React.ReactNode; active?: boolean | undefined }) {
   return (
     <button type="button" aria-label={label} title={label} onClick={onClick}
       className={`rounded-md p-1.5 hover:bg-accent hover:text-foreground ${active ? "text-primary" : ""}`}>
