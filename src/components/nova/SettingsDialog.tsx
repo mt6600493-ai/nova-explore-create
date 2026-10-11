@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -27,6 +27,7 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
   const [s, setS] = useState<NovaSettings>(loadSettings);
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
+  const wallpaperInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
