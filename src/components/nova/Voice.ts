@@ -1,4 +1,5 @@
 /* Browser speech helpers (Web Speech API). */
+import { loadSettings } from "@/lib/settings";
 type Rec = {
   lang: string;
   interimResults: boolean;
@@ -16,7 +17,8 @@ export function createRecognizer(): Rec | null {
   const C = (w["SpeechRecognition"] ?? w["webkitSpeechRecognition"]) as (new () => Rec) | undefined;
   if (!C) return null;
   const r = new C();
-  r.lang = navigator.language || "en-US";
+  const pref = loadSettings().voiceLang;
+  r.lang = pref !== "auto" ? pref : navigator.language || "en-US";
   r.interimResults = true;
   r.continuous = false;
   return r;
@@ -24,10 +26,32 @@ export function createRecognizer(): Rec | null {
 
 export function speak(text: string, onEnd: () => void) {
   if (typeof window === "undefined" || !window.speechSynthesis) return onEnd();
-  const clean = text.replace(/[#*_`>|-]/g, " ").replace(/\s+/g, " ").slice(0, 1500);
+  const s = loadSettings();
+  const clean = text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/[#*_`>|]/g, " ")
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/\s+/g, " ")
+    .slice(0, 3000);
   const u = new SpeechSynthesisUtterance(clean);
-  if (/[\u0600-\u06FF]/.test(clean)) u.lang = "ur-PK";
-  else if (/[\u0900-\u097F]/.test(clean)) u.lang = "hi-IN";
+  let lang = s.voiceLang === "auto" ? "" : s.voiceLang;
+  if (!lang) {
+    if (/[\u0600-\u06FF]/.test(clean)) lang = "ur-PK";
+    else if (/[\u0900-\u097F]/.test(clean)) lang = "hi-IN";
+    else lang = "en-US";
+  }
+  u.lang = lang;
+  u.rate = s.voiceRate === "slow" ? 0.8 : s.voiceRate === "fast" ? 1.3 : 1;
+  u.pitch = s.voiceStyle === "friendly" ? 1.1 : s.voiceStyle === "calm" ? 0.9 : 1;
+  const voices = window.speechSynthesis.getVoices();
+  const sameLang = voices.filter((v) => v.lang.toLowerCase().startsWith(lang.slice(0, 2).toLowerCase()));
+  const pool = sameLang.length ? sameLang : voices;
+  const male = /male|david|daniel|alex|fred|google uk english male|asad|uzma?/i;
+  const pick =
+    s.voiceGender === "male"
+      ? pool.find((v) => /\bmale\b|david|daniel|alex|fred|asad/i.test(v.name) && !/female/i.test(v.name))
+      : pool.find((v) => /female|zira|samantha|uzma|victoria|karen/i.test(v.name) || !male.test(v.name));
+  if (pick) u.voice = pick;
   u.onend = onEnd;
   u.onerror = onEnd;
   window.speechSynthesis.cancel();
