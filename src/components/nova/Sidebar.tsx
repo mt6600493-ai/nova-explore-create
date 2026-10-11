@@ -10,6 +10,7 @@ import { SettingsDialog } from "./SettingsDialog";
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
+  { to: "/learn", label: "Learn Languages", icon: GraduationCap },
 ] as const;
 
 export function ThreadList({ activeId, onNavigate }: { activeId?: string | undefined; onNavigate?: () => void }) {
