@@ -6,6 +6,9 @@ export type NovaSettings = {
   voiceRate: "slow" | "normal" | "fast";
   voiceLang: "auto" | "en-US" | "ur-PK" | "ps-AF";
   voiceStyle: "friendly" | "professional" | "calm";
+  themeMode: "dark" | "light";
+  accent: "emerald" | "blue" | "violet" | "amber" | "rose";
+  wallpaper: string; // data URL from user's gallery, "" = none
 };
 
 const KEY = "nova.settings.v1";
@@ -15,6 +18,9 @@ export const DEFAULT_SETTINGS: NovaSettings = {
   voiceRate: "normal",
   voiceLang: "auto",
   voiceStyle: "friendly",
+  themeMode: "dark",
+  accent: "emerald",
+  wallpaper: "",
 };
 
 export function loadSettings(): NovaSettings {

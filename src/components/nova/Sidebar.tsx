@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Home, LogIn, LogOut, MessageSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { GraduationCap, Home, LogIn, LogOut, MessageSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { SettingsDialog } from "./SettingsDialog";
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
+  { to: "/learn", label: "Learn Languages", icon: GraduationCap },
 ] as const;
 
 export function ThreadList({ activeId, onNavigate }: { activeId?: string | undefined; onNavigate?: () => void }) {

@@ -197,3 +197,57 @@
     50% { transform: scale(1.12); }
   }
 }
+
+/* Light mode */
+.light {
+  --background: oklch(0.97 0.008 250);
+  --foreground: oklch(0.22 0.03 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.03 260);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.93 0.01 250);
+  --secondary-foreground: oklch(0.25 0.03 260);
+  --muted: oklch(0.94 0.01 250);
+  --muted-foreground: oklch(0.5 0.03 255);
+  --accent: oklch(0.92 0.02 250);
+  --accent-foreground: oklch(0.25 0.03 260);
+  --border: oklch(0 0 0 / 10%);
+  --input: oklch(0 0 0 / 14%);
+  --sidebar: oklch(0.95 0.008 250);
+  --sidebar-foreground: oklch(0.22 0.03 260);
+  --sidebar-accent: oklch(0.91 0.015 250);
+  --sidebar-accent-foreground: oklch(0.22 0.03 260);
+  --sidebar-border: oklch(0 0 0 / 8%);
+  color-scheme: light;
+}
+.light .nova-bg {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, oklch(0.8 0.15 165 / 12%), transparent 60%),
+    radial-gradient(40rem 24rem at 0% 110%, oklch(0.83 0.15 75 / 9%), transparent 60%),
+    var(--background);
+}
+.light .nova-suggestion { background: oklch(1 0 0 / 80%); }
+.light .nova-composer { box-shadow: 0 10px 40px -12px oklch(0 0 0 / 25%); }
+
+/* Accent themes */
+[data-accent="blue"] { --primary: oklch(0.62 0.19 250); --ring: oklch(0.62 0.19 250); --sidebar-primary: oklch(0.62 0.19 250); --sidebar-ring: oklch(0.62 0.19 250); }
+[data-accent="violet"] { --primary: oklch(0.6 0.22 295); --ring: oklch(0.6 0.22 295); --sidebar-primary: oklch(0.6 0.22 295); --sidebar-ring: oklch(0.6 0.22 295); }
+[data-accent="amber"] { --primary: oklch(0.75 0.16 75); --ring: oklch(0.75 0.16 75); --sidebar-primary: oklch(0.75 0.16 75); --sidebar-ring: oklch(0.75 0.16 75); }
+[data-accent="rose"] { --primary: oklch(0.65 0.22 15); --ring: oklch(0.65 0.22 15); --sidebar-primary: oklch(0.65 0.22 15); --sidebar-ring: oklch(0.65 0.22 15); }
+
+/* Custom wallpaper from user's gallery */
+.nova-wallpaper {
+  background-size: cover;
+  background-position: center;
+}
+.nova-wallpaper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--background);
+  opacity: 0.82;
+  pointer-events: none;
+}
+.nova-wallpaper > * { position: relative; }
