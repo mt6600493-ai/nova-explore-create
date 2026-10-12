@@ -5,6 +5,7 @@ import type { UIMessage } from "ai";
 import { ChatWindow } from "@/components/nova/ChatWindow";
 import { AppShell } from "@/components/nova/AppShell";
 import { loadThreads } from "@/lib/threads";
+import { markVisited } from "@/lib/offline";
 
 export const Route = createFileRoute("/chat/$threadId")({
   validateSearch: (s: Record<string, unknown>): { q?: string } => (typeof s["q"] === "string" ? { q: s["q"] as string } : {}),
@@ -28,6 +29,7 @@ function ChatPage() {
   const [loaded, setLoaded] = useState<{ id: string; messages: UIMessage[] } | null>(null);
 
   useEffect(() => {
+    markVisited();
     setLoaded({ id: threadId, messages: loadThreads().find((t) => t.id === threadId)?.messages ?? [] });
   }, [threadId]);
   const initial = loaded?.id === threadId ? loaded.messages : null;
