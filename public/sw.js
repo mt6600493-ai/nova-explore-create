@@ -1,9 +1,11 @@
-/* Nova offline cache — keeps the app opening when the network is down. */
-const CACHE = "nova-shell-v1";
-const CORE = ["/", "/manifest.webmanifest", "/favicon.png", "/icon-192.png"];
+/* Nova offline cache — the app opens even with no internet. */
+const CACHE = "nova-shell-v2";
+const CORE = ["/", "/learn", "/offline", "/planner", "/phone", "/manifest.webmanifest", "/favicon.png", "/icon-192.png", "/creator.jpg"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then((c) => Promise.allSettled(CORE.map((u) => c.add(u)))).then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (e) => {
@@ -13,25 +15,44 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  const url = new URL(e.request.url);
-  if (e.request.method !== "GET") return;
-  // Never intercept auth, API calls or OAuth redirects.
+  const req = e.request;
+  const url = new URL(req.url);
+  if (req.method !== "GET") return;
   if (url.pathname.startsWith("/api") || url.pathname.startsWith("/~oauth")) return;
 
-  // Network-first for navigations & assets; fall back to cache when offline.
+  const isAsset = url.origin === self.location.origin && /\.(js|css|png|jpg|jpeg|svg|webp|woff2?)$/.test(url.pathname);
+
+  // Static files: cache-first (fast open). Pages: network-first with offline fallback.
+  if (isAsset) {
+    e.respondWith(
+      caches.match(req).then(
+        (hit) =>
+          hit ||
+          fetch(req).then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(req, copy));
+            }
+            return res;
+          }),
+      ),
+    );
+    return;
+  }
+
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then((res) => {
         if (res.ok && url.origin === self.location.origin) {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
+          caches.open(CACHE).then((c) => c.put(req, copy));
         }
         return res;
       })
       .catch(async () => {
-        const cached = await caches.match(e.request);
+        const cached = await caches.match(req, { ignoreSearch: true });
         if (cached) return cached;
-        if (e.request.mode === "navigate") return caches.match("/");
+        if (req.mode === "navigate") return (await caches.match("/offline")) || (await caches.match("/")) || Response.error();
         return Response.error();
       }),
   );

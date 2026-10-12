@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { NovaMark } from "@/components/nova/NovaMark";
 import { useAuth } from "@/lib/auth";
 import { useEffect } from "react";
+import { markVisited } from "@/lib/offline";
+import { loadThreads, newThreadId } from "@/lib/threads";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -35,7 +37,11 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) void navigate({ to: "/", replace: true });
+    if (!loading && session) {
+      markVisited();
+      const recent = loadThreads().sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      void navigate({ to: "/chat/$threadId", params: { threadId: recent?.id ?? newThreadId() }, replace: true });
+    }
   }, [loading, session, navigate]);
 
   const google = async () => {
