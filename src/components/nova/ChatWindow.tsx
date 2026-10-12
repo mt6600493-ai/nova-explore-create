@@ -27,7 +27,8 @@ import {
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
-import { upsertThread } from "@/lib/threads";
+import { loadThreads, upsertThread } from "@/lib/threads";
+import { isForcedOffline } from "@/lib/offline";
 import { Button } from "@/components/ui/button";
 import { EditImageCard, ImageCard, ModelCard, VideoCard } from "./ToolCards";
 import type { Part } from "./Scene3D";
@@ -82,7 +83,7 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: () => ({ customInstructions: loadSettings().customInstructions || profileRef.current?.custom_instructions || "" }),
+        body: () => ({ customInstructions: loadSettings().customInstructions || profileRef.current?.custom_instructions || "", memory: buildMemory(threadId) }),
       }),
     [],
   );
@@ -92,13 +93,8 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
     transport,
     onError: (e) => {
       const m = e.message || "";
-      toast.error(
-        m.includes("402") || m.toLowerCase().includes("credit")
-          ? "AI credits have run out."
-          : m.includes("429")
-            ? "Too many requests — try again shortly."
-            : "Couldn't get an answer. Please try again.",
-      );
+      console.error(m);
+      toast.error("Nova is a little busy — please send your message again.");
     },
   });
   const busy = status === "submitted" || status === "streaming";
@@ -121,6 +117,13 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
 
   const [text, setText] = useState("");
   const [online, setOnline] = useState(true);
+  const [forced, setForced] = useState(false);
+  useEffect(() => {
+    const f = () => setForced(isForcedOffline());
+    f();
+    window.addEventListener("nova-offline", f);
+    return () => window.removeEventListener("nova-offline", f);
+  }, []);
   const [listening, setListening] = useState(false);
   const [voice, setVoice] = useState<"off" | "listening" | "thinking" | "speaking">("off");
   const voiceRef = useRef(voice);
@@ -140,7 +143,7 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
 
   const send = useCallback(
     (t: string, files: PromptInputMessage["files"] = []) => {
-      if (!navigator.onLine) {
+      if (!navigator.onLine || isForcedOffline()) {
         const mk = (role: "user" | "assistant", txt: string): UIMessage => ({
           id: Math.random().toString(36).slice(2),
           role,
@@ -157,12 +160,15 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
   const submit = (msg: PromptInputMessage) => {
     const t = msg.text.trim();
     if ((!t && !msg.files.length) || busy) return;
+    if (dictating.current) { dictating.current = false; setListening(false); recRef.current?.stop(); }
     send(t, msg.files);
     setText("");
   };
 
+  const dictating = useRef(false);
+  const baseText = useRef("");
   const listen = (onFinal: (t: string) => void, onStop?: () => void) => {
-    const r = createRecognizer();
+    const r = createRecognizer(false);
     if (!r) {
       toast.error("Voice isn't supported in this browser. Try Chrome.");
       return false;
@@ -184,9 +190,41 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
     return true;
   };
 
+  // Dictation: keeps listening through pauses; only the send button sends.
   const toggleMic = () => {
-    if (listening) return recRef.current?.stop();
-    if (listen((t) => setText(t), () => setListening(false))) setListening(true);
+    if (listening) {
+      dictating.current = false;
+      setListening(false);
+      recRef.current?.stop();
+      return;
+    }
+    const startOnce = () => {
+      const r = createRecognizer(true);
+      if (!r) {
+        toast.error("Voice typing isn't supported in this browser. Try Chrome.");
+        dictating.current = false;
+        setListening(false);
+        return;
+      }
+      recRef.current = r;
+      let session = "";
+      r.onresult = (e) => {
+        let all = "";
+        for (let i = 0; i < e.results.length; i++) all += e.results[i]![0]!.transcript;
+        session = all;
+        setText((baseText.current ? baseText.current + " " : "") + all);
+      };
+      r.onend = () => {
+        if (session.trim()) baseText.current = (baseText.current ? baseText.current + " " : "") + session.trim();
+        if (dictating.current) startOnce(); // browser stopped after silence — keep listening
+      };
+      r.onerror = () => undefined;
+      r.start();
+    };
+    baseText.current = text.trim();
+    dictating.current = true;
+    setListening(true);
+    startOnce();
   };
 
   const startVoiceTurn = () => {
@@ -357,9 +395,9 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
       </Conversation>
 
       <div className="mx-auto w-full max-w-3xl px-3 pb-3 sm:pb-5">
-        {!online ? (
+        {!online || forced ? (
           <p className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <WifiOff className="size-3.5" /> Offline mode — basic replies only until you reconnect.
+            <WifiOff className="size-3.5" /> Offline mode — quick offline answers. Your chats are saved.
           </p>
         ) : null}
         <PromptInput onSubmit={submit} accept="image/*,application/pdf,text/plain,.txt,.md,.csv" multiple maxFiles={4} maxFileSize={8 * 1024 * 1024}
@@ -388,8 +426,8 @@ export function ChatWindow({ threadId, initialMessages, initialPrompt }: { threa
 
       {voice !== "off" ? (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 bg-background/95 backdrop-blur">
-          <div className={`nova-voice-orb is-${voice}`}>
-            <NovaMark className="size-20" />
+          <div className={`nova-voice-orb is-${voice}`} aria-hidden>
+            <span className="cloud c1" /><span className="cloud c2" /><span className="cloud c3" />
           </div>
           <p className="font-display text-xl">
             {voice === "listening" ? "Listening..." : voice === "thinking" ? "Thinking..." : "Speaking..."}
@@ -551,4 +589,21 @@ function AttachmentPreview() {
       ))}
     </PromptInputHeader>
   );
+}
+
+/** Short memory of the user's earlier chats so Nova can continue instead of repeating. */
+function buildMemory(currentId: string) {
+  try {
+    return loadThreads()
+      .filter((t) => t.id !== currentId)
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 8)
+      .map((t) => {
+        const asked = t.messages.filter((m) => m.role === "user").slice(-3).map((m) => textOf(m).slice(0, 140)).join(" | ");
+        return `- ${new Date(t.updatedAt).toLocaleDateString()}: "${t.title}" — user said: ${asked}`;
+      })
+      .join("\n");
+  } catch {
+    return "";
+  }
 }
