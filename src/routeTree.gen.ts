@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as PhoneRouteImport } from './routes/phone'
+import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiEditImageRouteImport } from './routes/api/edit-image'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
@@ -31,6 +34,21 @@ const LearnRoute = LearnRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhoneRoute = PhoneRouteImport.update({
+  id: '/phone',
+  path: '/phone',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -63,6 +81,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
+  '/offline': typeof OfflineRoute
+  '/phone': typeof PhoneRoute
+  '/planner': typeof PlannerRoute
   '/api/chat': typeof ApiChatRoute
   '/api/edit-image': typeof ApiEditImageRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -73,6 +94,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
+  '/offline': typeof OfflineRoute
+  '/phone': typeof PhoneRoute
+  '/planner': typeof PlannerRoute
   '/api/chat': typeof ApiChatRoute
   '/api/edit-image': typeof ApiEditImageRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -84,6 +108,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
+  '/offline': typeof OfflineRoute
+  '/phone': typeof PhoneRoute
+  '/planner': typeof PlannerRoute
   '/api/chat': typeof ApiChatRoute
   '/api/edit-image': typeof ApiEditImageRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -96,6 +123,9 @@ export interface FileRouteTypes {
     | '/'
     | '/learn'
     | '/login'
+    | '/offline'
+    | '/phone'
+    | '/planner'
     | '/api/chat'
     | '/api/edit-image'
     | '/api/generate-image'
@@ -106,6 +136,9 @@ export interface FileRouteTypes {
     | '/'
     | '/learn'
     | '/login'
+    | '/offline'
+    | '/phone'
+    | '/planner'
     | '/api/chat'
     | '/api/edit-image'
     | '/api/generate-image'
@@ -116,6 +149,9 @@ export interface FileRouteTypes {
     | '/'
     | '/learn'
     | '/login'
+    | '/offline'
+    | '/phone'
+    | '/planner'
     | '/api/chat'
     | '/api/edit-image'
     | '/api/generate-image'
@@ -127,6 +163,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
+  OfflineRoute: typeof OfflineRoute
+  PhoneRoute: typeof PhoneRoute
+  PlannerRoute: typeof PlannerRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiEditImageRoute: typeof ApiEditImageRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
@@ -155,6 +194,27 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/phone': {
+      id: '/phone'
+      path: '/phone'
+      fullPath: '/phone'
+      preLoaderRoute: typeof PhoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -199,6 +259,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
+  OfflineRoute: OfflineRoute,
+  PhoneRoute: PhoneRoute,
+  PlannerRoute: PlannerRoute,
   ApiChatRoute: ApiChatRoute,
   ApiEditImageRoute: ApiEditImageRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
