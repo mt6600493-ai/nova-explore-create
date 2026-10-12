@@ -20,7 +20,7 @@ export function createRecognizer(): Rec | null {
   const pref = loadSettings().voiceLang;
   r.lang = pref !== "auto" ? pref : navigator.language || "en-US";
   r.interimResults = true;
-  r.continuous = false;
+  r.continuous = true;
   return r;
 }
 

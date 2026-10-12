@@ -44,18 +44,22 @@ export async function handleChat(request: Request) {
 
   let messages: UIMessage[];
   let customInstructions = "";
+  let memory = "";
   try {
-    const body = (await request.json()) as { messages?: UIMessage[]; customInstructions?: string };
+    const body = (await request.json()) as { messages?: UIMessage[]; customInstructions?: string; memory?: string };
     if (!Array.isArray(body.messages)) throw new Error("bad");
     messages = body.messages;
     if (typeof body.customInstructions === "string") customInstructions = body.customInstructions.slice(0, 2000);
+    if (typeof body.memory === "string") memory = body.memory.slice(0, 3000);
   } catch {
     return new Response("Invalid request", { status: 400 });
   }
 
-  const instructions = customInstructions
-    ? `${INSTRUCTIONS}\n\nUSER'S CUSTOM INSTRUCTIONS (always follow these, unless they conflict with the rules above):\n${customInstructions}`
-    : INSTRUCTIONS;
+  let instructions = `${INSTRUCTIONS}\n\nToday's date is ${new Date().toUTCString()}. For news or current events, give the most recent information you know and clearly say up to when your knowledge is current; never present old news as today's news.`;
+  if (memory)
+    instructions += `\n\nMEMORY — what this user talked about with you in earlier chats (use it naturally, continue from where you left off, do not repeat topics already covered unless asked):\n${memory}`;
+  if (customInstructions)
+    instructions += `\n\nUSER'S CUSTOM INSTRUCTIONS (always follow these, unless they conflict with the rules above):\n${customInstructions}`;
 
   const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
   const provider = createOpenAI({
@@ -125,10 +129,8 @@ export async function handleChat(request: Request) {
       originalMessages: messages,
       sendReasoning: true,
       onError: (e) => {
-        const err = e as { statusCode?: number; message?: string };
-        if (err?.statusCode === 402) return "AI credits have run out.";
-        if (err?.statusCode === 429) return "Too many requests — please try again shortly.";
-        return err?.message ?? "Something went wrong.";
+        console.error("chat error", e);
+        return "Nova is a little busy right now. Please send your message again in a moment.";
       },
     }),
     runIdFetch,
