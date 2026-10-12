@@ -137,6 +137,10 @@ function LoginPage() {
         >
           {mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}
         </button>
+        <Button type="button" variant="ghost" className="mt-2 w-full"
+          onClick={() => { markVisited(); void navigate({ to: "/chat/$threadId", params: { threadId: newThreadId() } }); }}>
+          Continue as Guest
+        </Button>
       </div>
     </div>
   );
