@@ -8,7 +8,8 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { isForcedOffline } from "@/lib/offline";
 
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
@@ -121,9 +122,41 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [offline, setOffline] = useState(false);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator && !window.location.hostname.includes("id-preview")) {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+    const u = () => setOffline(!navigator.onLine || isForcedOffline());
+    u();
+    window.addEventListener("online", u);
+    window.addEventListener("offline", u);
+    window.addEventListener("nova-offline", u);
+    // Unlock speech on first touch so the voice can talk on phones.
+    const unlock = () => {
+      try {
+        const s = window.speechSynthesis;
+        if (s) { const x = new SpeechSynthesisUtterance(" "); x.volume = 0; s.speak(x); }
+      } catch { /* ignore */ }
+      window.removeEventListener("pointerdown", unlock);
+    };
+    window.addEventListener("pointerdown", unlock);
+    return () => {
+      window.removeEventListener("online", u);
+      window.removeEventListener("offline", u);
+      window.removeEventListener("nova-offline", u);
+      window.removeEventListener("pointerdown", unlock);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
+      {offline ? (
+        <div className="nova-offline-bar sticky top-0 z-[60] px-4 py-2 text-center text-sm font-bold tracking-wide">
+          ⚡ OFFLINE MODE — no internet. Your chats are saved and Nova still answers basic questions.
+        </div>
+      ) : null}
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster theme="dark" />

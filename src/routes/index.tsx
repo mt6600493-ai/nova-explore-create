@@ -1,4 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { markVisited, VISITED } from "@/lib/offline";
+import { loadThreads } from "@/lib/threads";
 import { ArrowRight, Box, GraduationCap, Image as ImageIcon, Languages, MessageSquare, Mic, Sparkles, Video } from "lucide-react";
 
 import { NovaMark } from "@/components/nova/NovaMark";
@@ -47,7 +50,21 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const chatTo = { to: "/chat/$threadId" as const, params: { threadId: newThreadId() } };
+  const navigate = useNavigate();
+  const [checked, setChecked] = useState(false);
+  const [chatId] = useState(() => newThreadId());
+  useEffect(() => {
+    let visited = false;
+    try { visited = localStorage.getItem(VISITED) === "1"; } catch { /* ignore */ }
+    if (visited) {
+      const recent = loadThreads().sort((a, b) => b.updatedAt - a.updatedAt)[0];
+      void navigate({ to: "/chat/$threadId", params: { threadId: recent?.id ?? newThreadId() }, replace: true });
+      return;
+    }
+    setChecked(true);
+  }, [navigate]);
+  const chatTo = { to: "/chat/$threadId" as const, params: { threadId: chatId }, onClick: markVisited };
+  if (!checked) return <div className="nova-bg min-h-dvh" />;
   return (
     <div className="nova-bg min-h-dvh">
       <header className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-4">
