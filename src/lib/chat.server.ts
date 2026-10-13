@@ -131,15 +131,13 @@ export async function handleChat(request: Request) {
         },
   });
 
-  return withLovableAiGatewayRunIdHeader(
-    result.toUIMessageStreamResponse({
+  const res = result.toUIMessageStreamResponse({
       originalMessages: messages,
       sendReasoning: true,
       onError: (e) => {
         console.error("chat error", e);
         return "Nova is a little busy right now. Please send your message again in a moment.";
       },
-    }),
-    runIdFetch,
-  );
+    });
+  return geminiKey ? res : withLovableAiGatewayRunIdHeader(res, runIdFetch);
 }
