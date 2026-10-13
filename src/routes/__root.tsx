@@ -9,7 +9,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { isForcedOffline } from "@/lib/offline";
+import { isForcedOffline, setForcedOffline } from "@/lib/offline";
 
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
@@ -130,7 +130,8 @@ function RootComponent() {
     }
     const u = () => setOffline(!navigator.onLine || isForcedOffline());
     u();
-    window.addEventListener("online", u);
+    const back = () => { setForcedOffline(false); u(); };
+    window.addEventListener("online", back);
     window.addEventListener("offline", u);
     window.addEventListener("nova-offline", u);
     // Unlock speech on first touch so the voice can talk on phones.

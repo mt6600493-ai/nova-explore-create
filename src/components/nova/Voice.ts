@@ -67,12 +67,17 @@ export function offlineReply(q: string) {
   if (/\b(hi|hello|salam|assalam|hey)\b/.test(t)) return "Hello! You're offline right now, but I'm still here. Ask me simple things, and I'll give full answers once you're back online.";
   if (/time|waqt|baje/.test(t)) return `It's ${new Date().toLocaleTimeString()} right now.`;
   if (/date|tareekh|aaj/.test(t)) return `Today is ${new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.`;
-  const m = t.match(/^[\d\s+\-*/().]+$/);
-  if (m) {
+  const expr = t.replace(/x|×/g, "*").replace(/÷/g, "/").replace(/plus|jama/g, "+").replace(/minus|nafi/g, "-").match(/[\d.]+(?:\s*[-+*/%]\s*[\d.()]+)+/);
+  if (expr) {
     try {
       // eslint-disable-next-line no-new-func
-      return `= ${String(Function(`"use strict";return (${t})`)())}`;
+      const v = Function(`"use strict";return (${expr[0]})`)() as number;
+      if (Number.isFinite(v)) return `🧮 **${expr[0]} = ${Math.round(v * 1e6) / 1e6}**`;
     } catch { /* fallthrough */ }
   }
+  const pct = t.match(/([\d.]+)\s*%\s*(?:of|ka)\s*([\d.]+)/);
+  if (pct) return `🧮 ${pct[1]}% of ${pct[2]} = **${(Number(pct[1]) * Number(pct[2])) / 100}**`;
+  if (/thank|shukriya/.test(t)) return "You're welcome! 😊";
+  if (/how are you|kaise ho|kese ho|kya haal/.test(t)) return "I'm great, thanks! You're offline, but I can still do maths, percentages, time and date for you. 💡";
   return "**Offline mode** — there's no internet connection, so I can't reach the full AI right now. I can tell the time, the date and do quick maths. Your message is saved; ask again when you're back online.";
 }
