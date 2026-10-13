@@ -4,6 +4,7 @@ import { Navigation } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { speak } from "@/components/nova/Voice";
+import { AppShell } from "@/components/nova/AppShell";
 
 export const Route = createFileRoute("/map")({
   head: () => ({
@@ -88,6 +89,7 @@ function MapPage() {
   };
 
   return (
+    <AppShell title="Map & Directions">
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4">
       <h1 className="flex items-center gap-2 font-display text-2xl font-semibold"><Navigation className="size-6 text-primary" /> Map & Directions</h1>
       <div className="flex flex-col gap-2">
@@ -112,5 +114,6 @@ function MapPage() {
         ))}
       </ol>
     </div>
+    </AppShell>
   );
 }
