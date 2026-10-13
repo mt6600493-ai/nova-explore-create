@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as PhoneRouteImport } from './routes/phone'
 import { Route as PlannerRouteImport } from './routes/planner'
@@ -34,6 +35,11 @@ const LearnRoute = LearnRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
+  '/map': typeof MapRoute
   '/offline': typeof OfflineRoute
   '/phone': typeof PhoneRoute
   '/planner': typeof PlannerRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
+  '/map': typeof MapRoute
   '/offline': typeof OfflineRoute
   '/phone': typeof PhoneRoute
   '/planner': typeof PlannerRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/learn': typeof LearnRoute
   '/login': typeof LoginRoute
+  '/map': typeof MapRoute
   '/offline': typeof OfflineRoute
   '/phone': typeof PhoneRoute
   '/planner': typeof PlannerRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/learn'
     | '/login'
+    | '/map'
     | '/offline'
     | '/phone'
     | '/planner'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/learn'
     | '/login'
+    | '/map'
     | '/offline'
     | '/phone'
     | '/planner'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/learn'
     | '/login'
+    | '/map'
     | '/offline'
     | '/phone'
     | '/planner'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LearnRoute: typeof LearnRoute
   LoginRoute: typeof LoginRoute
+  MapRoute: typeof MapRoute
   OfflineRoute: typeof OfflineRoute
   PhoneRoute: typeof PhoneRoute
   PlannerRoute: typeof PlannerRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -259,6 +279,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LearnRoute: LearnRoute,
   LoginRoute: LoginRoute,
+  MapRoute: MapRoute,
   OfflineRoute: OfflineRoute,
   PhoneRoute: PhoneRoute,
   PlannerRoute: PlannerRoute,
