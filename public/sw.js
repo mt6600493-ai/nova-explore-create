@@ -1,6 +1,6 @@
 /* Nova offline cache — the app opens even with no internet. */
-const CACHE = "nova-shell-v2";
-const CORE = ["/", "/learn", "/offline", "/planner", "/phone", "/manifest.webmanifest", "/favicon.png", "/icon-192.png", "/creator.jpg"];
+const CACHE = "nova-shell-v3";
+const CORE = ["/", "/learn", "/offline", "/planner", "/phone", "/map", "/manifest.webmanifest", "/favicon.png", "/icon-192.png", "/creator.jpg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(

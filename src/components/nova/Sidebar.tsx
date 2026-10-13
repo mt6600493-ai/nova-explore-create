@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Box, GraduationCap, Home, Phone, WifiOff, LogIn, LogOut, MessageSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { Navigation, Box, GraduationCap, Home, Phone, WifiOff, LogIn, LogOut, MessageSquare, Plus, Search, Settings, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/", label: "Home", icon: Home },
   { to: "/learn", label: "Learn Languages", icon: GraduationCap },
   { to: "/planner", label: "House Map & 3D Planner", icon: Box },
+  { to: "/map", label: "Map & Directions", icon: Navigation },
   { to: "/phone", label: "Phone Number Check", icon: Phone },
   { to: "/offline", label: "Offline Mode", icon: WifiOff },
 ] as const;

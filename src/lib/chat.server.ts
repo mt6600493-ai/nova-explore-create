@@ -1,3 +1,4 @@
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "ai";
 import { z } from "zod";
@@ -12,7 +13,7 @@ const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
 
 const INSTRUCTIONS = `You are Nova, a powerful all-in-one AI assistant. You answer any question on any topic clearly, accurately and in depth, using well-structured markdown (headings, lists, tables, code blocks when useful).
-CREATOR IDENTITY (permanent, always accurate): Nova was founded and created by Muhammad Talha, a student from Peshawar, Pakistan. His vision is to give the whole world a free, all-in-one AI. His welcome message: "Welcome to my free Nova AI — All in one place." Official website: https://nova-explore-anything.com. His original photo is shown in the app at /creator.jpg — never claim to modify, filter or edit that photo; it must always be shown exactly as it is. Whenever anyone asks who made Nova, who the founder is, or about Muhammad Talha, answer proudly with these facts.
+CREATOR IDENTITY (permanent, always accurate): Nova was founded and created by Muhammad Talha, a student from Peshawar, Pakistan, on 8 October 2026 (08.10.2026). His vision is to give the whole world a free, all-in-one AI. His welcome message: "Welcome to my free Nova AI — All in one place." Official website: https://nova-explore-anything.com. His original photo is shown in the app at /creator.jpg — never claim to modify, filter or edit that photo; it must always be shown exactly as it is. Whenever anyone asks who made Nova, who the founder is, or about Muhammad Talha, answer proudly with these facts.
 LANGUAGE RULE (most important): detect the language and script of the user's latest message and reply ONLY in that same language and script — Urdu script → Urdu script, Hindi → Devanagari, Roman Urdu/Hinglish → Roman Urdu, Arabic → Arabic, English → English, etc. Never switch language unless the user does.
 Sound natural and human: warm, confident, concise for simple questions, detailed for complex ones. No robotic filler.
 If the user attaches an image, look at it carefully and answer about it.
@@ -40,7 +41,7 @@ const shape = z.object({
 
 export async function handleChat(request: Request) {
   const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) return new Response("AI is not configured", { status: 500 });
+  if (!apiKey && !process.env["GEMINI_API_KEY"]) return new Response("AI is not configured", { status: 500 });
 
   let messages: UIMessage[];
   let customInstructions = "";
@@ -62,15 +63,19 @@ export async function handleChat(request: Request) {
     instructions += `\n\nUSER'S CUSTOM INSTRUCTIONS (always follow these, unless they conflict with the rules above):\n${customInstructions}`;
 
   const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
+  const geminiKey = process.env["GEMINI_API_KEY"];
   const provider = createOpenAI({
     baseURL: GATEWAY,
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+    apiKey: apiKey ?? "",
+    headers: { "Lovable-API-Key": apiKey ?? "", "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
     fetch: runIdFetch.fetch,
   });
+  const model = geminiKey
+    ? createGoogleGenerativeAI({ apiKey: geminiKey })("gemini-flash-latest")
+    : provider.responses(MODEL);
 
   const result = streamText({
-    model: provider.responses(MODEL),
+    model,
     instructions,
     messages: await convertToModelMessages(messages),
     abortSignal: request.signal,
@@ -113,26 +118,26 @@ export async function handleChat(request: Request) {
         execute: async ({ parts }) => ({ status: "3D model shown", parts: parts.length }),
       }),
     },
-    providerOptions: {
-      openai: {
-        store: false,
-        forceReasoning: true,
-        reasoningEffort: "medium",
-        reasoningSummary: "auto",
-        include: ["reasoning.encrypted_content"],
-      },
-    },
+    providerOptions: geminiKey
+      ? {}
+      : {
+          openai: {
+            store: false,
+            forceReasoning: true,
+            reasoningEffort: "medium",
+            reasoningSummary: "auto",
+            include: ["reasoning.encrypted_content"],
+          },
+        },
   });
 
-  return withLovableAiGatewayRunIdHeader(
-    result.toUIMessageStreamResponse({
+  const res = result.toUIMessageStreamResponse({
       originalMessages: messages,
       sendReasoning: true,
       onError: (e) => {
         console.error("chat error", e);
         return "Nova is a little busy right now. Please send your message again in a moment.";
       },
-    }),
-    runIdFetch,
-  );
+    });
+  return geminiKey ? res : withLovableAiGatewayRunIdHeader(res, runIdFetch);
 }
